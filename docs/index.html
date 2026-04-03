@@ -260,12 +260,13 @@
 </div>
 
 <script>
-// API key passed via URL param or omitted (free tier works keyless at 1req/5s)
+// Etherscan V2 API — chainid 421614 = Arbitrum Sepolia
 const APIKEY = new URLSearchParams(window.location.search).get('k') || '';
 const ESCROW = '0x26469E9C1a73eaC710bE3FC49966878a0e8ab0f7';
 const REGISTRY = '0x8004A818BFB912233c491871b3d84c89A494BD9e';
 const WALLET = '0x1D362d28349A448d3eF8506dD862Caa02a88c007';
-const API = 'https://api-sepolia.arbiscan.io/api';
+const API = 'https://api.etherscan.io/v2/api';
+const CHAIN_ID = '421614';
 
 function timeAgo(ts) {
   const s = Math.floor(Date.now()/1000) - parseInt(ts);
@@ -300,7 +301,7 @@ function renderTxTable(txs, containerId, color, emptyMsg) {
 
 async function fetchTxs(address) {
   try {
-    const r = await fetch(`${API}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10&sort=desc${APIKEY ? '&apikey='+APIKEY : ''}`);
+    const r = await fetch(`${API}?chainid=${CHAIN_ID}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10&sort=desc${APIKEY ? '&apikey='+APIKEY : ''}`);
     const d = await r.json();
     return d.status === '1' ? d.result : [];
   } catch { return []; }
