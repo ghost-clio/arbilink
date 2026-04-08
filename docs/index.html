@@ -179,30 +179,44 @@
     </div>
   </div>
 
-  <!-- Demo Economy -->
+  <!-- Live Bot Fleet -->
   <div class="section">
-    <h2>🤖 3-Agent Demo Economy</h2>
-    <div class="card" style="text-align:center; padding:30px;">
-      <div style="display:flex; justify-content:center; gap:40px; align-items:center; flex-wrap:wrap;">
-        <div style="padding:20px; border-radius:16px; border:2px solid var(--blue); background:#28A0F610; min-width:160px;">
-          <div style="font-size:13px; color:var(--blue); font-weight:600;">🤖 Alpha</div>
-          <div style="font-size:18px; font-weight:700; margin:4px 0;">Code Review</div>
-          <div style="font-size:13px; color:var(--dim);">$0.01 USDC</div>
+    <h2>🤖 Nemotron Bot Fleet (Live)</h2>
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div style="font-size:14px; color:var(--dim);"><span class="live-dot"></span>5 autonomous agents powered by Nemotron 120B (free)</div>
+        <div id="fleet-meta" style="font-size:12px; color:var(--dim);"></div>
+      </div>
+      <div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-bottom:20px;">
+        <div style="padding:16px; border-radius:12px; border:2px solid var(--blue); background:#28A0F610; min-width:140px; text-align:center;">
+          <div style="font-size:12px; color:var(--blue); font-weight:600;">🤖 Atlas</div>
+          <div style="font-size:14px; font-weight:700; margin:4px 0;">Data Provider</div>
+          <div style="font-size:11px; color:var(--dim);">market-analysis, news</div>
         </div>
-        <div style="font-size:24px; color:var(--dim);">→ <span style="font-size:12px; color:var(--gold);">$0.005</span> →</div>
-        <div style="padding:20px; border-radius:16px; border:2px solid var(--purple); background:#A371F710; min-width:160px;">
-          <div style="font-size:13px; color:var(--purple); font-weight:600;">🤖 Beta</div>
-          <div style="font-size:18px; font-weight:700; margin:4px 0;">Summarize</div>
-          <div style="font-size:13px; color:var(--dim);">$0.005 USDC</div>
+        <div style="padding:16px; border-radius:12px; border:2px solid var(--green); background:#3FB95010; min-width:140px; text-align:center;">
+          <div style="font-size:12px; color:var(--green); font-weight:600;">🤖 Sage</div>
+          <div style="font-size:14px; font-weight:700; margin:4px 0;">Code Reviewer</div>
+          <div style="font-size:11px; color:var(--dim);">code-review, audit</div>
         </div>
-        <div style="font-size:24px; color:var(--dim);">→ <span style="font-size:12px; color:var(--gold);">$0.02</span> →</div>
-        <div style="padding:20px; border-radius:16px; border:2px solid var(--orange); background:#F0883E10; min-width:160px;">
-          <div style="font-size:13px; color:var(--orange); font-weight:600;">🤖 Gamma</div>
-          <div style="font-size:18px; font-weight:700; margin:4px 0;">Analysis</div>
-          <div style="font-size:13px; color:var(--dim);">$0.02 USDC</div>
+        <div style="padding:16px; border-radius:12px; border:2px solid var(--purple); background:#A371F710; min-width:140px; text-align:center;">
+          <div style="font-size:12px; color:var(--purple); font-weight:600;">🤖 Pixel</div>
+          <div style="font-size:14px; font-weight:700; margin:4px 0;">Creative</div>
+          <div style="font-size:11px; color:var(--dim);">image-gen, design</div>
+        </div>
+        <div style="padding:16px; border-radius:12px; border:2px solid var(--orange); background:#F0883E10; min-width:140px; text-align:center;">
+          <div style="font-size:12px; color:var(--orange); font-weight:600;">🤖 Quant</div>
+          <div style="font-size:14px; font-weight:700; margin:4px 0;">Analyst</div>
+          <div style="font-size:11px; color:var(--dim);">sentiment, risk</div>
+        </div>
+        <div style="padding:16px; border-radius:12px; border:2px solid var(--cyan); background:#12D8FA10; min-width:140px; text-align:center;">
+          <div style="font-size:12px; color:var(--cyan); font-weight:600;">🤖 Echo</div>
+          <div style="font-size:14px; font-weight:700; margin:4px 0;">Communications</div>
+          <div style="font-size:11px; color:var(--dim);">translation, summary</div>
         </div>
       </div>
-      <div style="margin-top:16px; color:var(--dim); font-size:14px;">Circular economy — agents paying each other for services via x402</div>
+      <div id="fleet-stats" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px;"></div>
+      <h4 style="font-size:13px; color:var(--blue); margin:12px 0 8px;">Recent Transactions (Nemotron-powered)</h4>
+      <div id="fleet-txlog" style="color:var(--dim); font-size:13px;">Loading live data...</div>
     </div>
   </div>
 
@@ -317,6 +331,61 @@ async function fetchLiveFeed() {
 
 fetchLiveFeed();
 setInterval(fetchLiveFeed, 30000);
+
+// ── Nemotron Bot Fleet Data ──
+async function loadFleetData() {
+  try {
+    const [txRes, metaRes] = await Promise.all([
+      fetch('data/txlog.json').catch(() => null),
+      fetch('data/meta.json').catch(() => null),
+    ]);
+    
+    if (txRes && txRes.ok) {
+      const txData = await txRes.json();
+      const txs = txData.transactions || [];
+      const payments = txs.filter(t => t.type === 'payment');
+      const rejections = txs.filter(t => t.type === 'rejection');
+      
+      const statsEl = document.getElementById('fleet-stats');
+      const totalSpent = payments.reduce((s, t) => s + t.amount, 0);
+      statsEl.innerHTML = `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:var(--green);">${payments.length}</div>
+          <div style="font-size:11px;color:var(--dim);">Payments</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:var(--red);">${rejections.length}</div>
+          <div style="font-size:11px;color:var(--dim);">Policy Denials</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:var(--gold);">$${totalSpent.toFixed(4)}</div>
+          <div style="font-size:11px;color:var(--dim);">Total Volume (USDC)</div>
+        </div>`;
+      
+      const logEl = document.getElementById('fleet-txlog');
+      if (txs.length === 0) {
+        logEl.innerHTML = '<div style="padding:8px;">No transactions yet</div>';
+      } else {
+        const agentColors = {'0xAtlas_DataProvider_001':'var(--blue)','0xSage_CodeReviewer_002':'var(--green)','0xPixel_Creative_003':'var(--purple)','0xQuant_Analyst_004':'var(--orange)','0xEcho_Comms_005':'var(--cyan)'};
+        const agentNames = {'0xAtlas_DataProvider_001':'Atlas','0xSage_CodeReviewer_002':'Sage','0xPixel_Creative_003':'Pixel','0xQuant_Analyst_004':'Quant','0xEcho_Comms_005':'Echo'};
+        logEl.innerHTML = '<table><thead><tr><th>Time</th><th>Buyer</th><th>Service</th><th>Amount</th><th>Type</th><th>TX Hash</th></tr></thead><tbody>' +
+          txs.slice(-20).reverse().map(tx => {
+            const time = new Date(tx.timestamp).toLocaleTimeString();
+            const name = agentNames[tx.buyer] || tx.buyer.slice(0,12);
+            const color = agentColors[tx.buyer] || 'var(--dim)';
+            const typeColor = tx.type === 'payment' ? 'var(--green)' : 'var(--red)';
+            const typeIcon = tx.type === 'payment' ? '\u2705' : '\ud83d\udee1\ufe0f';
+            return `<tr><td style="font-size:12px;color:var(--dim);">${time}</td><td style="color:${color};font-weight:600;">${name}</td><td class="mono">${tx.service}</td><td style="color:var(--gold);">$${tx.amount.toFixed(4)}</td><td style="color:${typeColor};">${typeIcon} ${tx.type}</td><td class="mono" style="font-size:11px;color:var(--dim);">${tx.txHash.slice(0,14)}\u2026</td></tr>`;
+          }).join('') + '</tbody></table>';
+      }
+    }
+    if (metaRes && metaRes.ok) {
+      const meta = await metaRes.json();
+      document.getElementById('fleet-meta').textContent = `Last export: ${new Date(meta.exported).toLocaleString()}`;
+    }
+  } catch (e) { console.log('Fleet data unavailable:', e); }
+}
+loadFleetData();
 </script>
 
 </body>
